@@ -34,9 +34,13 @@ class LoanController extends Controller
             ], 404);
         }
 
-        if (!$book->available) {
+        $activeLoan = Loan::where('book_id', $book->id)
+            ->where('status', 'borrowed')
+            ->first();
+
+        if ($activeLoan) {
             return response()->json([
-                'message' => 'Book tidak tersedia'
+                'message' => 'Book sedang dipinjam dan tidak tersedia'
             ], 400);
         }
 
@@ -54,5 +58,13 @@ class LoanController extends Controller
             'message' => 'Loan berhasil dibuat',
             'loan' => $loan->load(['user', 'book'])
         ]);
+    }
+
+    // GET LOAN HISTORY
+    public function history()
+    {
+        $histories = \App\Models\LoanHistory::with(['user', 'book'])->get();
+
+        return response()->json($histories);
     }
 }

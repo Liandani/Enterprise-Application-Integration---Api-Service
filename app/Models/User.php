@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Model
+class User extends Authenticatable
 {
-    protected $table = 'users';
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -14,5 +15,17 @@ class User extends Model
         'phone'
     ];
 
-    public $timestamps = true;
+    protected $hidden = [
+        'remember_token',
+    ];
+
+    public function loans()
+    {
+        return $this->hasMany(Loan::class);
+    }
+
+    public function loanHistories()
+    {
+        return $this->hasMany(LoanHistory::class);
+    }
 }
