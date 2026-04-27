@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -26,10 +27,31 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // GET USER + LOANS (SIMULASI)
+    // CREATE USER
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:255'
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone
+        ]);
+
+        return response()->json([
+            'message' => 'User berhasil dibuat',
+            'user' => $user
+        ], 201);
+    }
+
+    // GET USER + LOANS
     public function getUserWithLoans($id)
     {
-        $user = User::find($id);
+        $user = User::with(['loans.book'])->find($id);
 
         if (!$user) {
             return response()->json([
@@ -37,22 +59,6 @@ class UserController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'user' => $user,
-            'loans' => [
-                [
-                    'book_id' => 1,
-                    'title' => 'Laravel for Beginners',
-                    'status' => 'borrowed',
-                    'loan_date' => '2026-04-25'
-                ],
-                [
-                    'book_id' => 2,
-                    'title' => 'Clean Code',
-                    'status' => 'returned',
-                    'loan_date' => '2026-04-20'
-                ]
-            ]
-        ]);
+        return response()->json($user);
     }
 }
