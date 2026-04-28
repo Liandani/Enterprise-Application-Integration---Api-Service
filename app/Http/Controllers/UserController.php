@@ -29,24 +29,21 @@ class UserController extends Controller
 
     // CREATE USER
     public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:255'
-        ]);
+{
+    $request->validate([
+        'name' => 'required|string',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|min:6'
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone
-        ]);
+    $user = \App\Models\User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => bcrypt($request->password),
+    ]);
 
-        return response()->json([
-            'message' => 'User berhasil dibuat',
-            'user' => $user
-        ], 201);
-    }
+    return response()->json(['message' => 'User berhasil didaftarkan', 'user' => $user]);
+}
 
     // GET USER + LOANS
     public function getUserWithLoans($id)
