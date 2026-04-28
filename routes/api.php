@@ -19,6 +19,7 @@ Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);
 Route::get('/users/{id}/loans', [UserController::class, 'getUserWithLoans']);
+Route::post('/users', [UserController::class, 'createUser']);
 
 // =====================
 // BOOKS
@@ -33,3 +34,5 @@ Route::get('/books/{id}/status', [BookController::class, 'status']);
 Route::get('/loans', [LoanController::class, 'index']);
 Route::post('/loans', [LoanController::class, 'store']);
 Route::get('/loans/history', [LoanController::class, 'history']);
+Route::post('/loans/return', [LoanController::class, 'returnBook']);
+
