@@ -31,7 +31,9 @@ class LoanController extends Controller
         $book = Book::find($request->book_id);
 
         if (!$user || !$book) {
-            return response()->json(['message' => 'User atau Book tidak ditemukan'], 404);
+            return response()->json([
+                'message' => 'User atau Book tidak ditemukan'
+            ], 404);
         }
 
         $activeLoan = Loan::where('book_id', $book->id)
@@ -39,7 +41,9 @@ class LoanController extends Controller
             ->first();
 
         if ($activeLoan) {
-            return response()->json(['message' => 'Book sedang dipinjam dan tidak tersedia'], 400);
+            return response()->json([
+                'message' => 'Book sedang dipinjam dan tidak tersedia'
+            ], 400);
         }
 
         $loan = Loan::create([
@@ -50,7 +54,9 @@ class LoanController extends Controller
             'status' => 'borrowed'
         ]);
 
-        $book->update(['available' => false]);
+        $book->update([
+            'available' => false
+        ]);
 
         return response()->json([
             'message' => 'Loan berhasil dibuat',
@@ -62,10 +68,11 @@ class LoanController extends Controller
     public function history()
     {
         $histories = LoanHistory::with(['user', 'book'])->get();
+
         return response()->json($histories);
     }
 
-    // PENGEMBALIAN BUKU & HITUNG DENDA
+    // PENGEMBALIAN BUKU
     public function returnBook(Request $request)
     {
         $request->validate([
@@ -74,13 +81,21 @@ class LoanController extends Controller
 
         $loan = Loan::find($request->loan_id);
 
-        if (!$loan || $loan->status === 'returned') {
-            return response()->json(['message' => 'Data peminjaman tidak ditemukan atau sudah dikembalikan'], 404);
+        if (!$loan) {
+            return response()->json([
+                'message' => 'Data peminjaman tidak ditemukan'
+            ], 404);
         }
 
-        // 1. Logika Hitung Denda (Rp 2.000 per hari terlambat)
+        if ($loan->status === 'returned') {
+            return response()->json([
+                'message' => 'Buku sudah dikembalikan sebelumnya'
+            ], 400);
+        }
+
         $today = now();
         $dueDate = Carbon::parse($loan->due_date);
+        $daysLate = 0;
         $fine = 0;
 
         if ($today->gt($dueDate)) {
@@ -88,23 +103,46 @@ class LoanController extends Controller
             $fine = $daysLate * 2000;
         }
 
-        // 2. Update Status Peminjaman di Database
+        // Update status peminjaman
+        // Catatan: fine_amount tidak disimpan di tabel loans,
+        // karena data denda akan dihitung dan disimpan di FineService/tabel fines.
         $loan->update([
             'status' => 'returned',
-            'return_date' => $today,
-            'fine_amount' => $fine
+            'return_date' => $today
         ]);
 
-        // 3. Update Status Buku agar bisa dipinjam lagi
+        // Update status buku agar bisa dipinjam lagi
         $book = Book::find($loan->book_id);
-        $book->update(['available' => true]);
+
+        if ($book) {
+            $book->update([
+                'available' => true
+            ]);
+        }
 
         return response()->json([
             'message' => 'Buku berhasil dikembalikan',
             'detail_denda' => [
-                'hari_terlambat' => $today->gt($dueDate) ? $today->diffInDays($dueDate) : 0,
-                'total_denda' => "Rp " . number_format($fine, 0, ',', '.')
+                'hari_terlambat' => $daysLate,
+                'total_denda' => 'Rp ' . number_format($fine, 0, ',', '.')
             ],
+            'data' => $loan->load(['user', 'book'])
+        ]);
+    }
+
+    // GET DETAIL LOAN BY ID
+    public function show($id)
+    {
+        $loan = Loan::with(['user', 'book'])->find($id);
+
+        if (!$loan) {
+            return response()->json([
+                'message' => 'Loan not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Loan detail retrieved successfully',
             'data' => $loan
         ]);
     }

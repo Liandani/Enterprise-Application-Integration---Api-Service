@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\FineController;
 
 // =====================
 // TEST ROUTE
@@ -35,4 +36,12 @@ Route::get('/loans', [LoanController::class, 'index']);
 Route::post('/loans', [LoanController::class, 'store']);
 Route::get('/loans/history', [LoanController::class, 'history']);
 Route::post('/loans/return', [LoanController::class, 'returnBook']);
+Route::get('/loans/{id}', [LoanController::class, 'show']);
 
+// =====================
+// FINES
+// =====================
+Route::get('/fines', [FineController::class, 'index']);
+Route::get('/fines/{id}', [FineController::class, 'show']);
+Route::post('/fines/check', [FineController::class, 'checkFine']);
+Route::get('/fines/loan/{loan_id}', [FineController::class, 'getByLoan']);
