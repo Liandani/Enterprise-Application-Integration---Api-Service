@@ -23,8 +23,10 @@ class LoanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required',
-            'book_id' => 'required'
+            'user_id' => 'required|integer',
+            'book_id' => 'required|integer',
+            'loan_date' => 'nullable|date',
+            'due_date' => 'nullable|date'
         ]);
 
         $user = User::find($request->user_id);
@@ -46,11 +48,19 @@ class LoanController extends Controller
             ], 400);
         }
 
+        $loanDate = $request->loan_date
+            ? Carbon::parse($request->loan_date)
+            : now();
+
+        $dueDate = $request->due_date
+            ? Carbon::parse($request->due_date)
+            : $loanDate->copy()->addDays(7);
+
         $loan = Loan::create([
             'user_id' => $user->id,
             'book_id' => $book->id,
-            'loan_date' => now(),
-            'due_date' => now()->addDays(7),
+            'loan_date' => $loanDate,
+            'due_date' => $dueDate,
             'status' => 'borrowed'
         ]);
 
@@ -76,7 +86,8 @@ class LoanController extends Controller
     public function returnBook(Request $request)
     {
         $request->validate([
-            'loan_id' => 'required'
+            'loan_id' => 'required|integer',
+            'return_date' => 'nullable|date'
         ]);
 
         $loan = Loan::find($request->loan_id);
@@ -93,25 +104,25 @@ class LoanController extends Controller
             ], 400);
         }
 
-        $today = now();
+        $returnDate = $request->return_date
+            ? Carbon::parse($request->return_date)
+            : now();
+
         $dueDate = Carbon::parse($loan->due_date);
+
         $daysLate = 0;
         $fine = 0;
 
-        if ($today->gt($dueDate)) {
-            $daysLate = $today->diffInDays($dueDate);
+        if ($returnDate->gt($dueDate)) {
+            $daysLate = $dueDate->diffInDays($returnDate);
             $fine = $daysLate * 2000;
         }
 
-        // Update status peminjaman
-        // Catatan: fine_amount tidak disimpan di tabel loans,
-        // karena data denda akan dihitung dan disimpan di FineService/tabel fines.
         $loan->update([
             'status' => 'returned',
-            'return_date' => $today
+            'return_date' => $returnDate
         ]);
 
-        // Update status buku agar bisa dipinjam lagi
         $book = Book::find($loan->book_id);
 
         if ($book) {

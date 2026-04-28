@@ -39,7 +39,7 @@ class FineController extends Controller
     public function checkFine(Request $request)
     {
         $request->validate([
-            'loan_id' => 'required'
+            'loan_id' => 'required|integer'
         ]);
 
         $loan = Loan::with(['user', 'book'])->find($request->loan_id);
@@ -57,17 +57,19 @@ class FineController extends Controller
             ], 400);
         }
 
-        $dueDate = Carbon::parse($loan->due_date);
-        $returnDate = Carbon::parse($loan->return_date);
+        $dueDate = Carbon::parse($loan->due_date)->startOfDay();
+        $returnDate = Carbon::parse($loan->return_date)->startOfDay();
 
         $finePerDay = 2000;
         $lateDays = 0;
+        $totalFine = 0;
+        $status = 'no_fine';
 
         if ($returnDate->gt($dueDate)) {
-            $lateDays = $returnDate->diffInDays($dueDate);
+            $lateDays = $dueDate->diffInDays($returnDate);
+            $totalFine = $lateDays * $finePerDay;
+            $status = 'unpaid';
         }
-
-        $totalFine = $lateDays * $finePerDay;
 
         $fine = Fine::updateOrCreate(
             [
@@ -81,7 +83,7 @@ class FineController extends Controller
                 'late_days' => $lateDays,
                 'fine_per_day' => $finePerDay,
                 'total_fine' => $totalFine,
-                'status' => $totalFine > 0 ? 'unpaid' : 'no_fine'
+                'status' => $status
             ]
         );
 
