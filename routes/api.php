@@ -20,7 +20,6 @@ Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);
 Route::get('/users/{id}/loans', [UserController::class, 'getUserWithLoans']);
-Route::post('/users', [UserController::class, 'createUser']);
 
 // =====================
 // BOOKS
@@ -42,6 +41,6 @@ Route::get('/loans/{id}', [LoanController::class, 'show']);
 // FINES
 // =====================
 Route::get('/fines', [FineController::class, 'index']);
-Route::get('/fines/{id}', [FineController::class, 'show']);
 Route::post('/fines/check', [FineController::class, 'checkFine']);
 Route::get('/fines/loan/{loan_id}', [FineController::class, 'getByLoan']);
+Route::get('/fines/{id}', [FineController::class, 'show']);
